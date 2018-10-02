@@ -1,0 +1,94 @@
+---
+title: "Արդյունավետ բազմության գոգավորություն"
+author: "ԼԶԱԻ"
+date: "April 26, 2017"
+output: html_document
+---
+Նախ մուտքագրենք տվյալները՝ DowJones-ի ինդեքսի և S&P500-ի գները
+ 
+```{r, echo=TRUE}
+table_1_<- read.csv("table (1).csv")
+head(table_1_) 
+```
+
+Հաշվենք եկամտաբերություններ for ցիկնի կիրառմամբ, ավելացնենք այն աղյուսակում.
+
+```{r,echo=TRUE }
+n <- length(table_1_$DJ)
+i <- 1
+SP_r<-0
+DJ_r<-0
+for(i in 1:n){r=log(table_1_$DJ[i]/table_1_$DJ[i+1]); DJ_r[i]=r; i=i+1}
+head(DJ_r)
+for(i in 1:n){r=log(table_1_$SP[i]/table_1_$SP[i+1]); SP_r[i]=r; i=i+1}
+head(SP_r)
+newtable<- data.frame(table_1_,DJ_r, SP_r)
+head(newtable)
+```
+
+Հաշվենք ինդեքների միջին եկամտաբերությունները և ստանդարտ շեղումը
+
+```{r, echo=TRUE}
+r_DJ=mean(DJ_r, na.rm=TRUE)
+r_SP=mean(SP_r,na.rm = TRUE)
+sd_DJ=sqrt(var(DJ_r,na.rm = TRUE))
+sd_SP=sqrt(var(SP_r,na.rm = TRUE))
+```
+
+Ներկայացնենք ստացված տվյալները աղյուսակով
+
+```{r, echo=TRUE}
+R<-c(r_DJ,r_SP)
+sigma<-c( sd_DJ,sd_SP)
+names(R)=c("DJ","SP500")
+k<-rbind(R,sigma)
+k
+```
+
+Պորտֆել կազմելու համար տանք կշիռների մատրիցը․ դիտարկենք 100 պորտֆել՝կազմված 2 ինդեքսներից
+```{r, echo=TRUE}
+x1<-seq(1,0,length.out = 100)
+x2<-1-x1
+names(x1)=c(1:length(x1))
+w<-rbind(x1,x2)
+m<-length(w[1,])
+```
+
+Հաշվենք պորտֆելների ռիսկն ու եկամտաբերությունը։ Եկամտաբերության ստացման համար կիրառվում է for ցիկլային օպերատորը i ինդեքսով, իսկ ստանդարտ շեղման համար  i և j  ինդեքսով՝ նպատակ ունենալով գտնել վերին և ստորին սահամանները։ Վերջինիս համար բավարար է կորելյացիային տալ 2 արժեք՝-1 և 1
+
+```{r, echo=TRUE}
+r<-1
+for(i in 1:m) {r[i]= (w[1,i]*k[1,1])+(w[2,i]*k[1,2]); i=i+1}
+head(r,10)
+
+korrel<-seq(-1,1,length.out = 3)
+korrel
+
+sigma<-0
+sigma<-matrix(sigma, length(x1), length(korrel))
+
+i=0
+j=0
+for(j in 1:length(korrel))
+  {
+for(i in 1:m) 
+  { sigma[i,j]= (w[1,i]^2)*(k[2,1]^2)+
+    (w[2,i]^2)*(k[2,2]^2)+
+  2*w[1,i]*w[2,i]*k[2,1]*k[2,2]*korrel[j]
+  i=i+1
+  }
+j=j+1
+ }
+
+l<-data.frame(r,sqrt(sigma))
+head(l,15)
+
+```
+
+Ստանանք  վերին և ստորին սահմանը,  զրոկայան կորելիացիայի դեպքը և ներկայացնենք գծապատկերով
+
+```{r, echo=TRUE}
+library(ggplot2)
+ggplot()+geom_point(data=l, aes(x=l$X1, y=l$r))+geom_point(data=l, aes(l$X3,l$r))+geom_point(data=l, aes(l$X2,l$r), colour="red")+xlab("Standart deviation") + ylab("Return")
+```
+
