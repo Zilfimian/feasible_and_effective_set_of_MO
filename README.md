@@ -1,2 +1,2 @@
-# feasible_and_effective_set_of_MO
+# feasible_and_effective_sets_of_MO
 Construction of effective portfolio in MPT
